@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>飲食店の座席表</title>
+    <!-- 全てのCSSをここに直接記述 -->
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f7f7f7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 16px;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        .container {
+            margin: auto;
+            padding: 24px;
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            max-width: 896px;
+            width: 100%;
+        }
+        h1 {
+            font-size: 30px;
+            font-weight: bold;
+            text-align: center;
+            color: #1f2937;
+            margin-bottom: 24px;
+        }
+        #seating-chart {
+            position: relative;
+            width: 100%;
+            height: 80vh;
+            background-color: #e0e0e0;
+            border-radius: 1rem;
+            padding: 1rem;
+        }
+        .seat {
+            position: absolute;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            height: 80px; /* h-20 */
+            width: 80px;  /* w-20 */
+            padding: 4px; /* p-1 */
+            border-radius: 6px; /* rounded-md */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+        }
+        .seat:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .seat-occupied {
+            background-color: #3b82f6; /* 青 */
+        }
+        .seat-needs-cleaning {
+            background-color: #f59e0b; /* 黄色 */
+        }
+        .seat-empty {
+            background-color: #10b981; /* 緑 */
+        }
+        .seat-status-text {
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            font-size: 1rem; /* text-base */
+            line-height: 1; /* leading-none */
+        }
+        #status-message {
+            margin-top: 32px;
+            padding: 16px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            color: #4b5563;
+            background-color: #f3f4f6;
+            border-radius: 8px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">茄子作店 座席管理</h1>
+        <div id="seating-chart">
+            <!-- 座席はJavaScriptで動的に生成され、スタイルで配置されます -->
+        </div>
+        <div id="status-message" class="hidden">
+            <!-- 状態メッセージはここに表示されます -->
+        </div>
+    </div>
+
+    <script>
+        // PDFの座席表に合わせて座席の初期状態と位置を設定
+        const seats = [
+            { id: 1,  status: 'empty', capacity: 2,  style: { top: '83%', left: '85%' } },
+            { id: 2,  status: 'empty', capacity: 2,  style: { top: '65%', left: '85%' } },
+            { id: 3,  status: 'empty', capacity: 2,  style: { top: '47%', left: '85%' } },
+            { id: 4,  status: 'empty', capacity: 2,  style: { top: '29%', left: '85%' } },
+            { id: 5,  status: 'empty', capacity: 2,  style: { top: '11%', left: '85%' } },
+            { id: 6,  status: 'empty', capacity: 2,  style: { top: '11%', left: '70%' } },
+            { id: 7,  status: 'empty', capacity: 2,  style: { top: '11%', left: '55%' } },
+            { id: 8,  status: 'empty', capacity: 4,  style: { top: '83%', left: '70%' } },
+            { id: 9,  status: 'empty', capacity: 4,  style: { top: '65%', left: '70%' } },
+            { id: 10, status: 'empty', capacity: 4,  style: { top: '47%', left: '70%' } },
+            { id: 11, status: 'empty', capacity: 4,  style: { top: '83%', left: '55%' } },
+            { id: 12, status: 'empty', capacity: 2,  style: { top: '65%', left: '55%' } },
+            { id: 13, status: 'empty', capacity: 2,  style: { top: '47%', left: '55%' } },
+            { id: 14, status: 'empty', capacity: 2,  style: { top: '83%', left: '40%' } },
+            { id: 15, status: 'empty', capacity: 2,  style: { top: '65%', left: '40%' } },
+            { id: 16, status: 'empty', capacity: 2,  style: { top: '83%', left: '25%' } },
+            { id: 17, status: 'empty', capacity: 4,  style: { top: '65%', left: '25%' } },
+            { id: 18, status: 'empty', capacity: 4,  style: { top: '37%', left: '40%' } },
+            { id: 19, status: 'empty', capacity: 2,  style: { top: '37%', left: '27%' } },
+            { id: 20, status: 'empty', capacity: 2,  style: { top: '37%', left: '14%' } },
+            { id: 21, status: 'empty', capacity: 2,  style: { top: '37%', left: '1%' } },
+            { id: 22, status: 'empty', capacity: 2,  style: { top: '19%', left: '40%' } },
+            { id: 23, status: 'empty', capacity: 2,  style: { top: '19%', left: '27%' } },
+            { id: 24, status: 'empty', capacity: 2,  style: { top: '19%', left: '14%' } },
+            { id: 25, status: 'empty', capacity: 2,  style: { top: '19%', left: '1%' } },
+        ];
+        
+        // いくつかの席を初期状態で変更
+        seats[0].status = 'occupied'; // テーブル1
+        seats[8].status = 'needs-cleaning'; // テーブル9
+        seats[16].status = 'occupied'; // テーブル17
+        seats[20].status = 'needs-cleaning'; // テーブル21
+        
+        const seatingChart = document.getElementById('seating-chart');
+        const statusMessage = document.getElementById('status-message');
+
+        // 状態とその日本語表示、CSSクラスのマッピング
+        const statusMap = {
+            'empty': { text: '空席', class: 'seat-empty' },
+            'occupied': { text: '在籍', class: 'seat-occupied' },
+            'needs-cleaning': { text: 'お直し', class: 'seat-needs-cleaning' },
+        };
+
+        /**
+         * 座席の状態を更新し、表示をリフレッシュする関数
+         * @param {number} seatId - 状態を更新する座席のID
+         */
+        function updateSeatStatus(seatId) {
+            const seat = seats.find(s => s.id === seatId);
+            if (!seat) return;
+
+            // 状態を次のサイクルに切り替える
+            switch (seat.status) {
+                case 'empty':
+                    seat.status = 'occupied';
+                    break;
+                case 'occupied':
+                    seat.status = 'needs-cleaning';
+                    break;
+                case 'needs-cleaning':
+                    seat.status = 'empty';
+                    break;
+                default:
+                    seat.status = 'empty';
+            }
+
+            // 表示を更新
+            renderSeatingChart();
+            
+            // 変更メッセージを表示
+            statusMessage.textContent = `座席 ${seat.id} の状態が「${statusMap[seat.status].text}」に更新されました。`;
+            statusMessage.classList.remove('hidden');
+            
+            // 3秒後にメッセージを非表示
+            setTimeout(() => {
+                statusMessage.classList.add('hidden');
+            }, 3000);
+        }
+
+        /**
+         * 座席表をレンダリングする関数
+         */
+        function renderSeatingChart() {
+            seatingChart.innerHTML = ''; // 一度クリア
+            seats.forEach(seat => {
+                const seatElement = document.createElement('div');
+                // クラス名を削除し、内部CSSのセレクタに合わせる
+                seatElement.className = `seat ${statusMap[seat.status].class}`;
+                seatElement.dataset.seatId = seat.id;
+                
+                // 位置情報を適用
+                Object.assign(seatElement.style, seat.style);
+
+                seatElement.innerHTML = `
+                    <div class="seat-status-text">${seat.id}</div>
+                `;
+
+                // クリックイベントリスナーを追加
+                seatElement.addEventListener('click', () => {
+                    updateSeatStatus(seat.id);
+                });
+
+                seatingChart.appendChild(seatElement);
+            });
+        }
+        
+        // ページ読み込み時に座席表を初期表示
+        document.addEventListener('DOMContentLoaded', renderSeatingChart);
+    </script>
+</body>
+</html>
